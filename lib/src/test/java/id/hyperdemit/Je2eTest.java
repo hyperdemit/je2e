@@ -1,37 +1,47 @@
-# Je2e
+package id.hyperdemit;
 
-### Basic Usage
-``` java
-//...
+import com.google.gson.*;
+import org.junit.jupiter.api.Test;
 
-Je2e je2e = new Je2e(new RSAKeyPair());
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
+import java.util.List;
 
-try {
-    KeyPairGenerator keyPair = je2e.getKeyPairGenerator();
-    byte[] publicKey = keyPair.getPublicKey();
-    byte[] privateKey = keyPair.getPrivateKey();
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-    String secretData = "This is secret data";
-    byte[] bytesSecretData = secretData.getBytes(StandardCharsets.UTF_8);
-    Encrypted encrypted = je2e.encrypt(bytesSecretData, List.of(publicKey));
+public class Je2eTest {
+    @Test void basicJe2eTest() {
+        Je2e je2e = new Je2e(new RSAKeyPair());
 
-    byte[] decryptData = je2e.decrypt(encrypted.getData(), encrypted.getSecretKeyList(), privateKey);
-    String receiveData = new String(decryptData, StandardCharsets.UTF_8);
+        try {
+            KeyPairGenerator keyPair = je2e.getKeyPairGenerator();
+            byte[] publicKey = keyPair.getPublicKey();
+            byte[] privateKey = keyPair.getPrivateKey();
 
-    // receiveData is equal secretData
+            String secretData = "This is secret data";
+            byte[] bytesSecretData = secretData.getBytes(StandardCharsets.UTF_8);
+            Encrypted encrypted = je2e.encrypt(bytesSecretData, List.of(publicKey));
 
-} catch (KeyNoMatchException e) {
-    System.out.println(e.getMessage());
-} catch (NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | InvalidKeySpecException | BadPaddingException | InvalidKeyException e) {
-    e.printStackTrace();
-}
+            byte[] decryptData = je2e.decrypt(encrypted.getData(), encrypted.getSecretKeyList(), privateKey);
+            String receiveData = new String(decryptData, StandardCharsets.UTF_8);
 
-//...
-```
+            assertEquals(receiveData, secretData, "basicJe2eTest should return 'true'");
+            System.out.println("secret data is: " + receiveData) ;
 
-### Using Gson
-``` java
-public class ExampleWithGson {
+        } catch (KeyNoMatchException e) {
+            System.out.println(e.getMessage());
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | InvalidKeySpecException | BadPaddingException | InvalidKeyException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static class ByteArrayToBase64TypeAdapter implements JsonSerializer<byte[]>, JsonDeserializer<byte[]> {
         @Override
         public byte[] deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
@@ -44,7 +54,7 @@ public class ExampleWithGson {
         }
     }
 
-    public void withGsonTest() {
+    @Test void gsonJe2eTest() {
         Gson customGson = new GsonBuilder()
                 .registerTypeHierarchyAdapter(byte[].class, new ByteArrayToBase64TypeAdapter())
                 .create();
@@ -68,7 +78,7 @@ public class ExampleWithGson {
             byte[] decryptData = je2e.decrypt(fromJson.getData(), fromJson.getSecretKeyList(), privateKey);
             String receiveData = new String(decryptData, StandardCharsets.UTF_8);
 
-            // receiveData is equal secretData
+            assertEquals(receiveData, secretData, "basicJe2eTest should return 'true'");
             System.out.println("secret data is: " + receiveData) ;
 
         } catch (KeyNoMatchException e) {
@@ -78,4 +88,3 @@ public class ExampleWithGson {
         }
     }
 }
-```
